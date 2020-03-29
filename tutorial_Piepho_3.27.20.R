@@ -49,8 +49,13 @@ if(!require(lmerTest)){
   install.packages("lmerTest")
   require(lmerTest)
 }
+if(!require(nlme)){
+  install.packages("nlme")
+  require(nlme)
+}
 #
 #
+## Custom theme to be used thoughout the script
 Turf_theme1<- function(base_size = 18) {
   theme_minimal(base_size = base_size) %+replace%
     theme(strip.background = element_rect(fill = "grey85", color = "black", linetype = 1),
@@ -194,6 +199,7 @@ ggplot(rice.data1.1, aes(y=emmean,
        y="Yield (t/ha)",
        color="Variety",
        shape="Variety")+
+  scale_color_manual(values = c("green4","red3","blue3"))+
   scale_y_continuous(limits = c(0,11),
                      breaks = c(seq(0,11, by=2)))+
   Turf_theme1(base_size = 20)
@@ -253,7 +259,7 @@ contrast(var.by.nitro1, alpha = 0.05, method = "pairwise")
 #
 #
 ## Fit a linear mixed model ('lmer') for a nested design 
-rice.lmer1.1 = lmer(yield ~ Replicate + nitrogen * management * variety + 
+rice.lmer1.1<- lmer(yield ~ Replicate + nitrogen * management * variety + 
                       (1|Replicate:nitrogen) + #random effect***
                       (1|Replicate:nitrogen:management), #random effect***
                 data=rice)
@@ -311,6 +317,7 @@ contrast(var.by.nitro2, alpha = 0.05, method = "pairwise")
 summary(beet)
 #
 #
+## Plotting the data with simple linear regression
 ggplot(beet, aes(y=yield,
                  x=nrate))+
   geom_point(shape=1,
@@ -320,10 +327,15 @@ ggplot(beet, aes(y=yield,
                size = 2, 
                geom = "point")+
   stat_smooth(method = 'lm',
-              formula = y ~ x,
+              formula = y ~ x, #linear term only***
               se=F,
-              color="black")
-
+              color="black")+
+  labs(x="Amount of nitrogen (kg)",
+       y="Yield (kg/ha)")+
+  Turf_theme1(base_size = 20)
+## THINGS TO NOTE:
+##  Compare to Figure 2 in Piepho & Edmondson (2018)
+##  Simple 'lm' applied to the 'stat_smooth' function
 #
 #
 ## Method 1 (Agritutorial package): fitting a polynomial
@@ -347,6 +359,7 @@ summary(lm(yield ~ 0+Replicate + Linear_N + Quadratic_N, data = beet)) #remove c
 ## Method 1 (used by most R users): fitting a polynomial
 ##  No need to create new columns
 ##  Same results as poly(degree=4, raw=F)
+##  raw=T give orthogonal polynomials which are harder to interperet
 anova(lm(yield ~   0+Replicate + nrate + I(nrate^2) + I(nrate^3) + I(nrate^4), data = beet))
 summary(lm(yield ~ 0+Replicate + nrate + I(nrate^2) + I(nrate^3) + I(nrate^4), data = beet))
 summary(lm(yield ~ 0+Replicate + nrate + I(nrate^2) + I(nrate^3), data = beet))
@@ -358,9 +371,42 @@ beet$Replicate<- factor(beet$Replicate, levels = c("3","2","1"))
 beet.lm1.1<- lm(yield ~ Replicate + nrate + I(nrate^2), data = beet)
 beet.summary1.1<- summary(beet.lm1.1)[[4]][,1:2]
 beet.confidence1.1<- confint(beet.lm1.1, level = 0.95)
-round(cbind(beet.summary1.1,beet.confidence1.1), 2)
+round(cbind(beet.summary1.1,beet.confidence1.1), 2) #rows 1-6 in Table 6***
+beet.ref1.1<- ref_grid(beet.lm1.1, at = list(nrate = 0))
+emmeans(beet.ref1.1, ~ nrate) #this is an easy way to get the last row of Table 6***
 ## THINGS TO NOTE:
 ##  Loosly compares to table 6 in Piepho & Edmondson (2018)
+##  There was really no reason for the author to have the 4th row in the table
+##  The last row in the table are average of blocks at the y-intercept
+#
+#
+## Plotting the optimal model
+ggplot(beet, aes(y=yield,
+                 x=nrate))+
+  geom_point(shape=1,
+             size=2)+
+  stat_summary(fun = "mean", 
+               color = "black", 
+               size = 2, 
+               geom = "point")+
+  stat_smooth(method = 'lm',
+              formula = y ~ x + I(x^2), #quadratic term I(x^2) is similar to the model***
+              se=F,
+              color="black")+
+  labs(x="Amount of nitrogen (kg)",
+       y="Yield (kg/ha)")+
+  Turf_theme1(base_size = 20)
+## THINGS TO NOTE:
+##  Compare to Figure 3 in Piepho & Edmondson (2018)
+##  The optimal model was added into the 'stat_smooth' function
+#
+#
+## Apply the delta method for optimal nitrogen
+##  Plot that on the last figure 
+##  Maximum point on a quadratic is often useful
+B1<- summary(beet.lm1.1)[[4]][4,1] #B1 (equation 5 Piepho & Edmondson (2018))
+B2<- summary(beet.lm1.1)[[4]][5,1] #B2 (equation 5 Piepho & Edmondson (2018))
+max.nitrogen<- -B1/(2*B2)
 #
 #
 ggplot(beet, aes(y=yield,
@@ -374,7 +420,13 @@ ggplot(beet, aes(y=yield,
   stat_smooth(method = 'lm',
               formula = y ~ x + I(x^2),
               se=F,
-              color="black")
+              color="black")+
+  geom_vline(xintercept = max.nitrogen, #adding the point of max nitrogen***
+             linetype="dashed",
+             color="red")+
+  labs(x="Amount of nitrogen (kg)",
+       y="Yield (kg/ha)")+
+  Turf_theme1(base_size = 20)
 ### 
 #*#
 #*#
@@ -387,7 +439,195 @@ ggplot(beet, aes(y=yield,
 #*#
 #*#
 ###
-#### MORE TO COME... ####
+#### 6 EXAMPLE 1 (CONTINUED)—COMPARING SEVERAL REGRESSIONS IN AN EXPERIMENT WITH QUALITATIVE AND QUANTITATIVE TREATMENT FACTORS ####
+## Based on:
+##  Gomez & Gomez, 1984, p. 143)
+##  A rice experiment with three management practices 
+##  3 management practices (minimum, optimum, intensive)
+##  5 different amounts of nitrogen (N) fertilizer (0, 50, 80, 110, 140 kg/ha)
+##  3 varieties (V1, V2, V3)
+## NOTE the rice data set is still being used, however nitrogen will be considered NUMERIC (was a factor before)
+## In classical experimental analysis this would be called analysis of covariance (ANCOVA)
+##  Often statisticians do notnuse this term
+##  I am not sure why this is, but I notice some folks really dislike that phrase
+#
+#
+summary(rice) #instead of 'nitrogen' this section uses 'nrate'
+#
+#
+## Mixed effects model with nitrogen as a continuous variable
+rice.lmer2.1<- lmer(yield ~ Replicate + management + variety * (nrate + I(nrate^2) + I(nrate^3) + I(nrate^4)) + #fixed effects***
+                                  (1|Replicate:nrate) + (1|Replicate:nrate:management), #random effects***
+                   data = rice)
+anova(rice.lmer2.1, ddf = "Kenward-Roger", type = 1)
+#
+#
+rice.lmer2.2<- lmer(yield ~ Replicate + management + variety * (nrate + I(nrate^2)) + #fixed effects***
+                      (1|Replicate:nrate) + (1|Replicate:nrate:management), #random effects***
+                    data = rice)
+anova(rice.lmer2.2, ddf = "Kenward-Roger", type = 1)
+#
+#
+## Making a comparable linear model 
+rice.aov2.1<- aov(yield ~ Replicate + management + variety * (nrate + I(nrate^2)) + #fixed effects***
+                      Error((Replicate:nrate) + (Replicate:nrate:management)), #fixed effects***
+                    data = rice)
+summary(rice.aov2.1, ddf = "Kenward-Roger", type = 1)
+## THINGS TO NOTE:
+##  Compare model 2.1 to Table 7 in Piepho & Edmondson (2018)
+##  The mixed model and linear model give similar results
+##  If there was missing data a linear model would be difficult to use
+#
+#
+## Calculating useful coefficients
+rice.ref2.1<- ref_grid(rice.lmer2.2, 
+                       at = list(nrate = 0)) #yield at the y intercept
+emmeans(rice.ref2.1, ~ variety)
+## THINGS TO NOTE:
+##  Compare to Table 8 first column in Piepho & Edmondson (2018)
+##  Table 8 is not incredible useful so additional plotting is provided below
+#
+#
+## Plotting results from mixed model
+##  Instead of plotting using the stat_smooth emmip from emmeans package was employed
+rice.ref2.2<- ref_grid(rice.lmer2.2, 
+                       at = list(nrate = seq(0,140, by=10)))
+emmip(rice.ref2.2, variety ~ nrate , cov.reduce = T)+
+  geom_point()+
+  geom_line()+
+  labs(x="Nitrogen (kg/ha)",
+       y="Yield (t/ha)",
+       color="Variety",
+       shape="Variety",
+       linetype="Variety")+
+  scale_color_manual(values = c("green4","red3","blue3"))+
+  scale_y_continuous(limits = c(0,11),
+                     breaks = c(seq(0,11, by=2)))+
+  Turf_theme1(base_size = 20)
+## THINGS TO NOTE:
+##  Compare to Figure 1 first column in Piepho & Edmondson (2018)
+### 
+#*#
+#*#
+#*#
+#*#
+#*#
+#*#
+#*#
+#*#
+#*#
+#*#
+###
+#### 8 EXAMPLE 4—AN EXPERIMENT WITH ONE QUALITATIVE TREATMENT FACTOR AND REPEATED MEASURES IN TIME ####
+## Based on:
+##  Milliken & Johnson (1992, p. 429)
+##  4 sorghum varieties
+##  5 replicate blocks
+##  5 consecutive measures starting two weeks after emergence
+##  Response was leaf area index
+#
+#
+summary(sorghum)
+#
+#
+sorghum$rawWeeks = poly(sorghum$varweek, degree = 4, raw = TRUE)
+sorghum$polWeeks = poly(sorghum$varweek, degree = 4, raw = FALSE)
+sorghum$polBlocks = poly(sorghum$varblock, degree = 4, raw = FALSE)
+sorghum$factblock = factor(sorghum$varblock)
+#
+#
+AIC = NULL
+logLik = NULL
+Model = c("ID", "CS", "AR(1)", "AR(1) + nugget", "UN")
+#
+#
+full_indy = gls(y ~ factweek * (Replicate + variety), sorghum)
+anova(full_indy)
+AIC = c(AIC, AIC(full_indy))
+logLik = c(logLik, logLik(full_indy))
+#
+#
+corCompSymm = gls(y ~ factweek * (Replicate + variety),
+                  corr = corCompSymm(form = ~ varweek|factplot), sorghum)
+anova(corCompSymm)
+AIC = c(AIC, AIC(corCompSymm))
+logLik = c(logLik, logLik(corCompSymm))
+Variogram(corCompSymm)
+#
+#
+corExp = gls(y ~ factweek * (Replicate + variety),
+             corr = corExp(form = ~ varweek|factplot), sorghum)
+anova(corExp)
+AIC = c(AIC, AIC(corExp))
+logLik = c(logLik, logLik(corExp))
+Variogram(corExp)
+#
+#
+corExp_nugget = gls(y ~ factweek * (Replicate + variety),
+                    corr = corExp(form = ~ varweek|factplot, nugget = TRUE), sorghum)
+anova(corExp_nugget)
+AIC = c(AIC, AIC(corExp_nugget))
+logLik = c(logLik, logLik(corExp_nugget))
+Variogram(corExp)
+#
+#
+corSymm = gls(y ~ factweek * (Replicate + variety), corr = corSymm(form = ~ 1|factplot),
+              weights = varIdent(form = ~ 1|varweek), sorghum)
+anova(corSymm)
+AIC = c(AIC, AIC(corSymm))
+logLik = c(logLik, logLik(corSymm))
+Variogram(corSymm)
+#
+#
+dAIC = AIC - AIC[4]
+logLik = -2 * logLik
+dlogLik = logLik - logLik[4]
+AICtable = data.frame(Model, round(logLik, 2), round(dlogLik, 2), round(AIC, 2), round(dAIC, 2))
+colnames(AICtable) = c("Covar_Model", "-2logLr", "-diff2logLr", "AIC", "diffAIC")
+AICtable
+#
+#
+pol_Wald =
+  gls(y ~ (factblock+variety) * (rawWeeks[,1] + rawWeeks[,2] + polWeeks[,3] + polWeeks[,4]),
+      corr = corExp(form = ~ varweek | factplot, nugget = TRUE), sorghum)
+anova(pol_Wald)
+range=coef(pol_Wald$modelStruct$corStruct,unconstrained=FALSE)[1]
+nugget=coef(pol_Wald$modelStruct$corStruct,unconstrained=FALSE)[2]
+rho=(1-nugget)*exp(-1/range)
+cat("Range =", range, "\n")
+cat("Nugget =", nugget, "\n")
+cat("Correlation =", rho, "\n")
+ACF(pol_Wald)
+plot(pol_Wald,sub.caption = NA, main = "Residuals from full polynomial weeks model")
+#
+#
+quad_Wald = gls(y ~ polBlocks + variety + rawWeeks[,1] + rawWeeks[,2] +
+                  polBlocks:(rawWeeks[,1] + rawWeeks[,2]+ polWeeks[,3] + polWeeks[,4]) +
+                  variety:(rawWeeks[,1] + rawWeeks[,2]),
+                corr = corExp(form = ~ varweek | factplot, nugget=TRUE), sorghum)
+anova(quad_Wald)
+summary(quad_Wald)$tTable
+vcov(quad_Wald)
+range=coef(quad_Wald$modelStruct$corStruct,unconstrained=FALSE)[1]
+nugget=coef(quad_Wald$modelStruct$corStruct,unconstrained=FALSE)[2]
+rho=(1-nugget)*exp(-1/range)
+cat("Range =", range, "\n")
+cat("Nugget =", nugget, "\n")
+cat("Correlation =", rho, "\n")
+plot(quad_Wald,sub.caption = NA, main = "Residuals from quadratic regression model")
+#
+#
+pol_Wald =
+  gls(y ~ (factblock+variety) * (rawWeeks[,1] + rawWeeks[,2] + polWeeks[,3] + polWeeks[,4]),
+      corr = corExp(form = ~ varweek | factplot, nugget = TRUE), sorghum)
+
+summary(sorghum)
+sorghum.gls1.1<- gls(y ~ (factblock+variety) * (varweek + I(varweek^2)),
+                     corr = corExp(form = ~ varweek | factplot, nugget = TRUE),
+                     data = sorghum)
+anova(sorghum.gls1.1)
+sorghum.refgrd1.1<- ref_grid(sorghum.gls1.1,at = list(varweek = seq(0,5, by=1)))
+emmip(sorghum.refgrd1.1, variety ~ varweek)
 ### 
 #*#
 #*#
