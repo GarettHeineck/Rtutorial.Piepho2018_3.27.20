@@ -80,38 +80,123 @@ Turf_theme1<- function(base_size = 18) {
 #*#
 #*#
 ###
-#### PRACTICE PLOTTING ####
+#### 1 PRACTICE PLOTTING ####
 ## Using the stock 'iris' data set
-## Plotting using 'ggplot2'
-head(iris)
+## Summarizing the iris data
+summary(iris)
+## THINGS TO NOTE:
+##  The 'iris' data set contains information on species of iris
+##  Sepal length 
+##  Petal width
+##  iris Species
 #
 #
-ggplot(iris, aes(y=Sepal.Length,
-                 x=Petal.Width))+
-  geom_point()+
-  Turf_theme1(base_size = 3)
+## Using 'ggplot2' to plot the 'iris' data
+ggplot(iris,                      #calling data frame
+       aes(y=Petal.Width,        #calling sepal column***
+           x=Sepal.Length))+       #calling petal column***
+  geom_point()+                   #organizing data into geometric(geom) point plot (dot plot)***
+  Turf_theme1(base_size = 3)      #adding the fancy turfgrass theme***
 #
 #
-ggplot(iris, aes(y=Sepal.Length,
-                 x=Petal.Width))+
-  geom_point(size=2)+ #change size
-  Turf_theme1(base_size = 15) #change size***
+ggplot(iris, aes(y=Petal.Width,
+                 x=Sepal.Length))+
+  geom_point(size=2)+ #change dot size
+  Turf_theme1(base_size = 15) #increase font size***
 #
 #
-ggplot(iris, aes(y=Sepal.Length,
-                 x=Petal.Width,
-                 color=Species))+ #add species***
+ggplot(iris, aes(y=Petal.Width,
+                 x=Sepal.Length,
+                 color=Species))+ #add species designation***
   geom_point(size=2)+
   Turf_theme1(base_size = 15)
 #
 #
-ggplot(iris, aes(y=Sepal.Length,
-                 x=Petal.Width,
+ggplot(iris, aes(y=Petal.Width,
+                 x=Sepal.Length,
+                 color=Species))+ 
+  geom_smooth(method = 'lm')+
+  labs(title = "Practice Example: Iris data")+ #add title to plot
+  geom_point(size=2)+
+  Turf_theme1(base_size = 15)
+#
+#
+ggplot(iris, aes(y=Petal.Width,
+                 x=Sepal.Length,
                  color=Species))+
+  labs(title = "Practice example - Iris data")+
   geom_point(size=2)+
   stat_smooth(method = 'lm',
-              formula = y ~ x)+ #add a regression***
+              formula = y ~ x)+ #add a regression for each species***
   Turf_theme1(base_size = 15)
+## THINGS TO NOTE:
+##  Generally, as petal width increases so does sepal width
+##  Different species may have different widths
+##  The linear relationship between width and length may change based on species
+### 
+#*#
+#*#
+#*#
+#*#
+#*#
+#*#
+#*#
+#*#
+#*#
+#*#
+###
+#### 2 PRACTICE MODEL FITTING ####
+## Using the stock 'iris' data set
+## Summarizing the iris data
+summary(iris)
+#
+#
+## Reject or fail to reject the hypothesis that:
+##  Ho: no correlation exists 
+##  Ha: petal ad petal width are correlated among species
+##  Using a linear model with lm() or aov() 
+##  aov() is a wrapper function for lm()
+iris.lm.1<- lm(Petal.Width~ #y variable (response)***
+                 Sepal.Length,#x variable (explanatory)***
+               data=iris) #calling data***
+summary(iris.lm.1) #summary output***
+## THINGS TO NOTE:
+##  Reject the null (Ho) in favor of alternative (Ha)
+##  width and length are correlated
+#
+#
+## Reject or fail to reject the hypothesis that:
+##  Ho: species have the same petal width
+##  Ha: species have different petal width
+iris.lm.2<- lm(Petal.Width~ Species, #adding the factor species***
+               data=iris) 
+anova(iris.lm.2) 
+## THINGS TO NOTE:
+##  Reject the null (Ho) in favor of alternative (Ha)
+##  Species have different petal widths
+#
+#
+## Reject or fail to reject the hypothesis that:
+##  Ho: the relationship (slope) of each species is the same for width and length
+##  Ha: The relatioship is species dependant
+iris.lm.3<- lm((Petal.Width)~ Species * Sepal.Length, # '*' adds and interaction term between variables***, 
+               data=iris) 
+anova(iris.lm.3)
+summary(iris.lm.3)
+## THINGS TO NOTE:
+##  FAIL to reject the null (Ho)
+##  The relationship is the same
+#
+#
+lm3.assumptions<- data.frame(residuals=residuals(iris.lm.3),
+                             fitted=fitted(iris.lm.3))
+ggplot(data = lm3.assumptions, aes(y=residuals,
+                                   x=fitted))+ 
+  geom_point() +
+  geom_smooth(se=F)
+## THINGS TO NOTE:
+##  Some uneven distribution around the line 
+##  Try a square root transformation
 ### 
 #*#
 #*#
@@ -127,13 +212,14 @@ ggplot(iris, aes(y=Sepal.Length,
 #### 3 EXAMPLE 1—FACTORIAL INTERACTIONS ####
 ## Based on:
 ##  Gomez & Gomez (1984, p. 143) (download book: https://scholar.google.com/scholar?hl=en&as_sdt=0%2C24&q=Statistical+procedures+for+agricultural+research&btnG=)
-##  A rice experiment with three management practices 
+##  A rice experiment with three management practices
+##  Arranged in a split-split plot design
 ##  3 management practices (minimum, optimum, intensive)
 ##  5 different amounts of nitrogen (N) fertilizer (0, 50, 80, 110, 140 kg/ha)
 ##  3 varieties (V1, V2, V3)
 #
 #
-## Look at a summary of the data
+## Summarizing rice data
 summary(rice)
 #
 #
@@ -153,6 +239,7 @@ ggdesplot(nf ~ col*row,
 ## THINGS TO NOTE:
 ##  There is not complete randomization of 'management' and 'nitrogen' treatments
 ##  Variety is completely randomized
+##  Often split-plot (nested) designs are used for logistic reasons
 #
 #
 ## Fit a linear model ('lm') for a FACTORIAL design 
@@ -180,49 +267,13 @@ summary(rice.lm1.2)
 #
 #
 ## Calculating estimated marginal means (averages) from model
-rice.emmean1.1<- emmeans(rice.lm1.2, ~ variety * nitrogen) #warning messages are ok***
+rice.emmean1.1<- emmeans(rice.lm1.1, ~ variety * nitrogen) #warning messages are ok here***
 rice.data1.1<- as.data.frame(rice.emmean1.1) #converting to a data frame
 rice.emmean1.1
 ## THINGS TO NOTE:
 ##  Compare with Table 2 in Piepho & Edmondson (2018)
 ##  Variety and Nitrogen treatment are included in the same emmean
 ##  Managment treatments can be observed independantly
-#
-#
-## Plotting means as a dot plot
-ggplot(rice.data1.1, aes(y=emmean,
-                         x=nitrogen,
-                         color=variety,
-                         shape=variety))+
-  geom_point(size=3)+
-  labs(x="Nitrogen (kg/ha)",
-       y="Yield (t/ha)",
-       color="Variety",
-       shape="Variety")+
-  scale_color_manual(values = c("green4","red3","blue3"))+
-  scale_y_continuous(limits = c(0,11),
-                     breaks = c(seq(0,11, by=2)))+
-  Turf_theme1(base_size = 20)
-## THINGS TO NOTE:
-##  Compare with Figure 1 in Piepho & Edmondson (2018)
-##  The dots have the correct patterns
-##  Regression lines are absent
-#
-#
-## Plotting means as a bar plot
-ggplot(rice.date1.1, aes(y=emmean,
-                         x=nitrogen,
-                         fill=variety))+
-  geom_bar(stat="identity",
-           position=position_dodge())+
-  labs(x="Nitrogen (kg/ha)",
-       y="Yield (t/ha)",
-       color="Variety",
-       shape="Variety",
-       linetype="Variety")+
-  scale_y_continuous(limits = c(0,11),
-                     breaks = c(seq(0,11, by=2)))+
-  Turf_theme1(base_size = 20)
 #
 #
 ## Calculating standard error of the mean (SEM) and contrasts
@@ -236,6 +287,45 @@ contrast(var.by.nitro1, alpha = 0.05, method = "pairwise")
 ##  Table 2 used REML not Sums of Squares to calculate SEM 
 ##  This results in different values
 ##  Output tests for differences between treatment levels
+##  Here is an interesting tutorial on how to hand calculated SEM: http://www.fao.org/3/X6831E/X6831E09.htm#TopOfPage 
+#
+#
+## Plotting means as a dot plot
+ggplot(rice.data1.1, aes(y=emmean,
+                         x=nitrogen,
+                         color=variety,
+                         shape=variety))+
+  geom_point(size=3)+
+  labs(x="Nitrogen (kg/ha)",
+       y="Yield (t/ha)",
+       color="Variety",
+       shape="Variety",
+       title = "Example 1 - rice data")+
+  scale_color_manual(values = c("green4","red3","blue3"))+
+  scale_y_continuous(limits = c(0,11),
+                     breaks = c(seq(0,11, by=2)))+
+  Turf_theme1(base_size = 20)
+## THINGS TO NOTE:
+##  Compare with Figure 1 in Piepho & Edmondson (2018)
+##  The dots have the correct patterns
+##  Regression lines are absent
+#
+#
+## Plotting means as a bar plot
+ggplot(rice.data1.1, aes(y=emmean,
+                         x=nitrogen,
+                         fill=variety))+
+  geom_bar(stat="identity",
+           position=position_dodge())+
+  labs(x="Nitrogen (kg/ha)",
+       y="Yield (t/ha)",
+       color="Variety",
+       shape="Variety",
+       linetype="Variety",
+       title = "Example 1 - rice data")+
+  scale_y_continuous(limits = c(0,11),
+                     breaks = c(seq(0,11, by=2)))+
+  Turf_theme1(base_size = 20)
 ### 
 #*#
 #*#
@@ -263,7 +353,6 @@ rice.lmer1.1<- lmer(yield ~ Replicate + nitrogen * management * variety +
                       (1|Replicate:nitrogen) + #random effect***
                       (1|Replicate:nitrogen:management), #random effect***
                 data=rice)
-summary(rice.lmer1.1)
 anova(rice.lmer1.1, ddf = "Kenward-Roger", type = 1)
 anova(rice.lmer1.1, ddf = "Satterthwaite", type = 1)
 ## THINGS TO NOTE:
@@ -286,8 +375,10 @@ rice.emmean1.1
 ## Calculating standard error of the mean (SEM) and contrasts
 nitro.by.var2<- emmeans(rice.lmer1.1, ~ nitrogen|variety) #hold variety constant***
 contrast(nitro.by.var2, alpha = 0.05, method = "pairwise")
+CLD(nitro.by.var2, Letters = c(letters))
 var.by.nitro2 = emmeans(rice.lmer1.1, ~ variety|nitrogen) #hold nitrogen constant***
 contrast(var.by.nitro2, alpha = 0.05, method = "pairwise")
+CLD(var.by.nitro2, Letters = c(letters))
 ## THINGS TO NOTE:
 ##  Compare with footers in Table 2 Piepho & Edmondson (2018)
 ##  Values are very similar to the table
@@ -331,7 +422,8 @@ ggplot(beet, aes(y=yield,
               se=F,
               color="black")+
   labs(x="Amount of nitrogen (kg)",
-       y="Yield (kg/ha)")+
+       y="Yield (kg/ha)",
+       title = "EXAMPLE 2 - beet data")+
   Turf_theme1(base_size = 20)
 ## THINGS TO NOTE:
 ##  Compare to Figure 2 in Piepho & Edmondson (2018)
@@ -345,10 +437,10 @@ ggplot(beet, aes(y=yield,
 N<- poly((beet$nrate), degree = 4, raw = TRUE)
 colnames(N)<- c("Linear_N", "Quadratic_N", "Cubic_N", "Quartic_N")
 beet<- cbind(beet, N)
-anova(lm(yield ~   0+Replicate + Linear_N + Quadratic_N + Cubic_N + Quartic_N, data = beet)) #the '0' was added to exclude the intercept***
-summary(lm(yield ~ 0+Replicate + Linear_N + Quadratic_N + Cubic_N + Quartic_N, data = beet)) #marginal fit***
-summary(lm(yield ~ 0+Replicate + Linear_N + Quadratic_N + Cubic_N, data = beet)) #remove quartic***
-summary(lm(yield ~ 0+Replicate + Linear_N + Quadratic_N, data = beet)) #remove cubic***
+anova(lm(yield ~   Replicate + Linear_N + Quadratic_N + Cubic_N + Quartic_N, data = beet)) #the '0' was added to exclude the intercept***
+summary(lm(yield ~ Replicate + Linear_N + Quadratic_N + Cubic_N + Quartic_N, data = beet)) #marginal fit***
+summary(lm(yield ~ Replicate + Linear_N + Quadratic_N + Cubic_N, data = beet)) #remove quartic***
+anova(lm(yield ~   Replicate + Linear_N + Quadratic_N, data = beet)) #remove cubic***
 ## THINGS TO NOTE:
 ##  Loosly compares to tables 4 and 5 in Piepho & Edmondson (2018)
 ##  'anova' fits sequentially in the order added (unless there are interactions added)
@@ -356,14 +448,14 @@ summary(lm(yield ~ 0+Replicate + Linear_N + Quadratic_N, data = beet)) #remove c
 ##  'summary' it is obvious by the summary output that quadratic, cubic and quartic terme are colinear
 #
 #
-## Method 1 (used by most R users): fitting a polynomial
+## Method 2 (used by most R users): fitting a polynomial
 ##  No need to create new columns
 ##  Same results as poly(degree=4, raw=F)
 ##  raw=T give orthogonal polynomials which are harder to interperet
-anova(lm(yield ~   0+Replicate + nrate + I(nrate^2) + I(nrate^3) + I(nrate^4), data = beet))
-summary(lm(yield ~ 0+Replicate + nrate + I(nrate^2) + I(nrate^3) + I(nrate^4), data = beet))
-summary(lm(yield ~ 0+Replicate + nrate + I(nrate^2) + I(nrate^3), data = beet))
-summary(lm(yield ~ 0+Replicate + nrate + I(nrate^2), data = beet))
+anova(lm(yield ~ Replicate + nrate + I(nrate^2) + I(nrate^3) + I(nrate^4), data = beet))
+anova(lm(yield ~ Replicate + nrate + I(nrate^2) + I(nrate^3), data = beet))
+anova(lm(yield ~ Replicate + nrate + I(nrate^2), data = beet))
+anova(lm(yield ~Replicate + nrate + I(nrate^2), data = beet))
 #
 #
 ## Calculating estimates from the best fit model (quadratic)
@@ -371,9 +463,11 @@ beet$Replicate<- factor(beet$Replicate, levels = c("3","2","1"))
 beet.lm1.1<- lm(yield ~ Replicate + nrate + I(nrate^2), data = beet)
 beet.summary1.1<- summary(beet.lm1.1)[[4]][,1:2]
 beet.confidence1.1<- confint(beet.lm1.1, level = 0.95)
-round(cbind(beet.summary1.1,beet.confidence1.1), 2) #rows 1-6 in Table 6***
+round(cbind(beet.summary1.1,beet.confidence1.1), 3) #rows 1-6 in Table 6***
 beet.ref1.1<- ref_grid(beet.lm1.1, at = list(nrate = 0))
+beet.ref30.80<- ref_grid(beet.lm1.1, at = list(nrate = c(30,80,102)))
 emmeans(beet.ref1.1, ~ nrate) #this is an easy way to get the last row of Table 6***
+emmeans(beet.ref30.80, ~ nrate) #exmaple from demo slides
 ## THINGS TO NOTE:
 ##  Loosly compares to table 6 in Piepho & Edmondson (2018)
 ##  There was really no reason for the author to have the 4th row in the table
@@ -425,7 +519,8 @@ ggplot(beet, aes(y=yield,
              linetype="dashed",
              color="red")+
   labs(x="Amount of nitrogen (kg)",
-       y="Yield (kg/ha)")+
+       y="Yield (kg/ha)",
+       title = "Example 2 - beet data")+
   Turf_theme1(base_size = 20)
 ### 
 #*#
@@ -459,24 +554,14 @@ summary(rice) #instead of 'nitrogen' this section uses 'nrate'
 rice.lmer2.1<- lmer(yield ~ Replicate + management + variety * (nrate + I(nrate^2) + I(nrate^3) + I(nrate^4)) + #fixed effects***
                                   (1|Replicate:nrate) + (1|Replicate:nrate:management), #random effects***
                    data = rice)
-anova(rice.lmer2.1, ddf = "Kenward-Roger", type = 1)
+anova(rice.lmer2.1, type = 1)
 #
 #
-rice.lmer2.2<- lmer(yield ~ Replicate + management + variety * (nrate + I(nrate^2)) + #fixed effects***
+rice.lmer2.2<- lmer(yield ~ Replicate + management + variety * nrate + I(nrate^2) + #fixed effects***
                       (1|Replicate:nrate) + (1|Replicate:nrate:management), #random effects***
                     data = rice)
-anova(rice.lmer2.2, ddf = "Kenward-Roger", type = 1)
-#
-#
-## Making a comparable linear model 
-rice.aov2.1<- aov(yield ~ Replicate + management + variety * (nrate + I(nrate^2)) + #fixed effects***
-                      Error((Replicate:nrate) + (Replicate:nrate:management)), #fixed effects***
-                    data = rice)
-summary(rice.aov2.1, ddf = "Kenward-Roger", type = 1)
-## THINGS TO NOTE:
-##  Compare model 2.1 to Table 7 in Piepho & Edmondson (2018)
-##  The mixed model and linear model give similar results
-##  If there was missing data a linear model would be difficult to use
+summary(rice.lmer2.2)
+anova(rice.lmer2.2, type = 1)
 #
 #
 ## Calculating useful coefficients
@@ -491,15 +576,25 @@ emmeans(rice.ref2.1, ~ variety)
 ## Plotting results from mixed model
 ##  Instead of plotting using the stat_smooth emmip from emmeans package was employed
 rice.ref2.2<- ref_grid(rice.lmer2.2, 
-                       at = list(nrate = seq(0,140, by=10)))
-emmip(rice.ref2.2, variety ~ nrate , cov.reduce = T)+
-  geom_point()+
-  geom_line()+
+                       at = list(nrate = seq(0,140, by=1)))
+rice.emm2.2<- data.frame(emmeans(rice.ref2.2, ~ variety*nrate))
+#
+#
+ggplot(rice.emm2.2, aes(y=emmean,
+                         x=nrate,
+                         color=variety,
+                         shape=variety))+
+  geom_line(size=.75)+
+  stat_summary(rice, mapping=aes(y=yield,
+                               x=nrate,
+                               color=variety,
+                               shape=variety),
+               size=.5)+
   labs(x="Nitrogen (kg/ha)",
        y="Yield (t/ha)",
        color="Variety",
        shape="Variety",
-       linetype="Variety")+
+       title = "Example 1 - rice data")+
   scale_color_manual(values = c("green4","red3","blue3"))+
   scale_y_continuous(limits = c(0,11),
                      breaks = c(seq(0,11, by=2)))+
@@ -622,12 +717,62 @@ pol_Wald =
       corr = corExp(form = ~ varweek | factplot, nugget = TRUE), sorghum)
 
 summary(sorghum)
-sorghum.gls1.1<- gls(y ~ (factblock+variety) * (varweek + I(varweek^2)),
+sorghum.gls1.1<- gls(y ~ (factblock+variety) * (varweek + I(varweek^2) + I(varweek^3) + I(varweek^4)),
                      corr = corExp(form = ~ varweek | factplot, nugget = TRUE),
                      data = sorghum)
 anova(sorghum.gls1.1)
 sorghum.refgrd1.1<- ref_grid(sorghum.gls1.1,at = list(varweek = seq(0,5, by=1)))
-emmip(sorghum.refgrd1.1, variety ~ varweek)
+emmip(sorghum.refgrd1.1)
+#
+#
+sorghum.lme1.1<- lme(y ~ (factblock+variety) * (varweek + I(varweek^2)), random=~1|factplot,
+                     corExp(form = ~ varweek | factplot, nugget = TRUE),
+                     data=sorghum)
+anova(sorghum.lme1.1, type = "sequential")
+sorghum.refgrd1.1<- ref_grid(sorghum.lme1.1, at = list(varweek = seq(1,5, by=1)))
+emmip(sorghum.refgrd1.1, variety ~ nrate , cov.reduce = T)
+#
+#
+summary(sorghum)
+sorghum.lme1.2<- lme(y ~ factblock + variety + (variety:varweek) + (variety:I(varweek^2)), random=~1|factplot,
+                     corr = corExp(form = ~ varweek|factplot, nugget = TRUE),
+                     data=sorghum)
+anova(sorghum.lme1.2, type = "sequential")
+sorghum.refgrd1.2<- ref_grid(sorghum.lme1.2, at = list(varweek = seq(1,5, by=1)))
+emmip(sorghum.refgrd1.2, variety ~ varweek , cov.reduce = T)
+#
+#
+sorghum.lme1.2<- lme(y ~ factblock + variety + varweek + I(varweek^2) +
+                       polBlocks:(varweek+I(varweek^2)+I(varweek^3)+I(varweek^4)) +
+                       variety:(varweek+I(varweek^2)), random=~1|factplot,
+                     corr = corExp(form = ~ varweek|factplot, nugget = TRUE),
+                     data=sorghum)
+anova(sorghum.lme1.2, type = "sequential")
+summary(sorghum.lme1.2)$tTable
+vcov(sorghum.lme1.2)
+range=coef(sorghum.lme1.2$modelStruct$corStruct,unconstrained=FALSE)[1]
+nugget=coef(sorghum.lme1.2$modelStruct$corStruct,unconstrained=FALSE)[2]
+rho=(1-nugget)*exp(-1/range)
+cat("Range =", range, "\n")
+cat("Nugget =", nugget, "\n")
+cat("Correlation =", rho, "\n")
+plot(quad_Wald,sub.caption = NA, main = "Residuals from quadratic regression model")
+sorghum.refgrd1.4<- ref_grid(sorghum.lme1.2, at = list(varweek = seq(1,5, by=1)), nesting = NULL)
+emmip(sorghum.refgrd1.4, variety ~ varweek , cov.reduce = T)
+#
+#
+sorghum.lme1.3<- lme(y ~ factblock + variety + (variety:varweek) + (variety:I(varweek^2)), random=~1|factplot,
+                     corr = corExp(form = ~ varweek|factplot, nugget = TRUE),
+                     data=sorghum$polBlocks)
+anova(sorghum.lme1.3, type = "sequential")
+#
+#
+sorghum.aov1.1<- lm(y ~ factblock + variety + (variety:varweek) + (variety:I(varweek^2))+
+                       (factplot),
+                     data=sorghum)
+anova(sorghum.aov1.1)
+sorghum.refgrd1.3<- ref_grid(sorghum.aov1.1, at = list(varweek = seq(1,5, by=1)), nesting = NULL)
+emmip(sorghum.refgrd1.3, variety ~ varweek , cov.reduce = T)
 ### 
 #*#
 #*#
@@ -640,3 +785,6 @@ emmip(sorghum.refgrd1.1, variety ~ varweek)
 #*#
 #*#
 ###
+#*#
+#*#
+#*#
