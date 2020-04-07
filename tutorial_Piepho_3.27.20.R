@@ -11,7 +11,7 @@
 ##  Garett Heineck
 ##  gch.analysis.solutions@gmail.com 
 ##  https://docs.google.com/forms/d/e/1FAIpQLSfcf3kgeZ7_ToxD0b1lpzLbexpNOm5Ri5mcwmMa2jBBWJ6hFA/viewform?usp=sf_link
-##  3.27.2020
+##  3.27.2020 and 4.07.2020
 #
 #
 ## Remeber to UPDATE R!
@@ -129,6 +129,27 @@ ggplot(iris, aes(y=Petal.Width,
   stat_smooth(method = 'lm',
               formula = y ~ x)+ #add a regression for each species***
   Turf_theme1(base_size = 15)
+#
+#
+ggplot(iris, aes(Petal.Width))+
+  geom_histogram(binwidth=.2)+  #designating a histogram for the geometric object*** 
+  Turf_theme1(base_size = 15)
+ggplot(iris, aes(Sepal.Length))+
+  geom_histogram(binwidth=.2)+  #designating a histogram for the geometric object*** 
+  Turf_theme1(base_size = 15)
+ggplot(iris, aes(y=Petal.Width,
+                 x=Species))+
+  geom_boxplot()+  #designating a boxplot for the geometric object*** 
+  Turf_theme1(base_size = 15)
+#
+#
+ggplot(iris,                     
+       aes(y=Petal.Width,        
+           x=Sepal.Length))+
+  geom_point()+
+  geom_smooth(method='lm',
+              formula = y ~ x,
+              se=F)
 ## THINGS TO NOTE:
 ##  Generally, as petal width increases so does sepal width
 ##  Different species may have different widths
@@ -195,8 +216,9 @@ ggplot(data = lm3.assumptions, aes(y=residuals,
   geom_point() +
   geom_smooth(se=F)
 ## THINGS TO NOTE:
-##  Some uneven distribution around the line 
-##  Try a square root transformation
+##  Some uneven distribution around the line
+##  This indicates assumptions are not being met
+##  Try a square root transformation on petal width
 ### 
 #*#
 #*#
@@ -267,7 +289,7 @@ summary(rice.lm1.2)
 #
 #
 ## Calculating estimated marginal means (averages) from model
-rice.emmean1.1<- emmeans(rice.lm1.1, ~ variety * nitrogen) #warning messages are ok here***
+rice.emmean1.1<- emmeans(rice.lm1.2, ~ variety * nitrogen) #warning messages are ok here***
 rice.data1.1<- as.data.frame(rice.emmean1.1) #converting to a data frame
 rice.emmean1.1
 ## THINGS TO NOTE:
@@ -277,9 +299,9 @@ rice.emmean1.1
 #
 #
 ## Calculating standard error of the mean (SEM) and contrasts
-nitro.by.var1<- emmeans::emmeans(rice.lm1.2, ~ nitrogen|variety) #hold variety constant***
+nitro.by.var1<- emmeans(rice.lm1.2, ~ nitrogen|variety) #hold variety constant***
 contrast(nitro.by.var1, alpha = 0.05, method = "pairwise")
-var.by.nitro1 = emmeans::emmeans(rice.lm1.2, ~ variety|nitrogen) #hold nitrogen constant***
+var.by.nitro1 = emmeans(rice.lm1.2, ~ variety|nitrogen) #hold nitrogen constant***
 contrast(var.by.nitro1, alpha = 0.05, method = "pairwise")
 ## THINGS TO NOTE:
 ##  Compare with footers in Table 2 Piepho & Edmondson (2018)
@@ -311,18 +333,26 @@ ggplot(rice.data1.1, aes(y=emmean,
 ##  Regression lines are absent
 #
 #
-## Plotting means as a bar plot
+## Plotting means as a bar plot and compact letter display
+rice.cld.1.1<- data.frame(CLD(rice.emmean1.1, 
+                              Letters = c("abcdefghijh"))) #designating letter grouping***
+#
+#
 ggplot(rice.data1.1, aes(y=emmean,
                          x=nitrogen,
                          fill=variety))+
   geom_bar(stat="identity",
            position=position_dodge())+
+  geom_text(rice.cld.1.1, mapping = aes(y=emmean+.5, #adding compact letter display***
+                                        x=nitrogen,
+                                        label=.group),
+            position = position_dodge(width = .8))+
   labs(x="Nitrogen (kg/ha)",
        y="Yield (t/ha)",
        color="Variety",
        shape="Variety",
        linetype="Variety",
-       title = "Example 1 - rice data")+
+       title = "Example 1 - rice data (linear model)")+
   scale_y_continuous(limits = c(0,11),
                      breaks = c(seq(0,11, by=2)))+
   Turf_theme1(base_size = 20)
@@ -365,8 +395,8 @@ anova(rice.lmer1.1, ddf = "Satterthwaite", type = 1)
 #
 #
 ## Calculating estimated marginal means (averages) from mixed model
-rice.emmean1.1<- emmeans(rice.lmer1.1, ~ variety * nitrogen) #warning messages are ok***
-rice.emmean1.1
+rice.emmean2.1<- emmeans(rice.lmer1.1, ~ variety * nitrogen) #warning messages are ok***
+rice.emmean2.1
 ## THINGS TO NOTE:
 ##  Compare with Table 2 in Piepho & Edmondson (2018)
 ##  Values are correct and are the same as the linear model
@@ -383,6 +413,31 @@ CLD(var.by.nitro2, Letters = c(letters))
 ##  Compare with footers in Table 2 Piepho & Edmondson (2018)
 ##  Values are very similar to the table
 ##  Values from SEM from mixed model are different than linear model
+#
+#
+## Plotting means as a bar plot and compact letter display
+rice.cld.2.1<- data.frame(CLD(rice.emmean2.1, 
+                              Letters = c("abcdefghijh"))) #designating letter grouping***
+#
+#
+ggplot(rice.cld.2.1, aes(y=emmean,
+                         x=nitrogen,
+                         fill=variety))+
+  geom_bar(stat="identity",
+           position=position_dodge())+
+  geom_text(rice.cld.2.1, mapping = aes(y=emmean+.5, #adding compact letter display***
+                                        x=nitrogen,
+                                        label=.group),
+            position = position_dodge(width = .8))+
+  labs(x="Nitrogen (kg/ha)",
+       y="Yield (t/ha)",
+       color="Variety",
+       shape="Variety",
+       linetype="Variety",
+       title = "Example 1 - rice data (mixed model)")+
+  scale_y_continuous(limits = c(0,11),
+                     breaks = c(seq(0,11, by=2)))+
+  Turf_theme1(base_size = 20)
 ### 
 #*#
 #*#
@@ -488,7 +543,8 @@ ggplot(beet, aes(y=yield,
               se=F,
               color="black")+
   labs(x="Amount of nitrogen (kg)",
-       y="Yield (kg/ha)")+
+       y="Yield (kg/ha)",
+       title = "EXAMPLE 2 - beet data")+
   Turf_theme1(base_size = 20)
 ## THINGS TO NOTE:
 ##  Compare to Figure 3 in Piepho & Edmondson (2018)
@@ -543,7 +599,7 @@ ggplot(beet, aes(y=yield,
 ##  3 varieties (V1, V2, V3)
 ## NOTE the rice data set is still being used, however nitrogen will be considered NUMERIC (was a factor before)
 ## In classical experimental analysis this would be called analysis of covariance (ANCOVA)
-##  Often statisticians do notnuse this term
+##  Often statisticians do not use this term
 ##  I am not sure why this is, but I notice some folks really dislike that phrase
 #
 #
@@ -555,13 +611,23 @@ rice.lmer2.1<- lmer(yield ~ Replicate + management + variety * (nrate + I(nrate^
                                   (1|Replicate:nrate) + (1|Replicate:nrate:management), #random effects***
                    data = rice)
 anova(rice.lmer2.1, type = 1)
+## THINGS TO NOTE:
+##  This is the full polynomial model described in the previous section
+##  Compare to Table 7 in Piepho & Edmondson (2018)
+##  Cubic and quartic terms are at most maringally significant
+##  The author opted for a more simplistic quadratic model 
 #
 #
-rice.lmer2.2<- lmer(yield ~ Replicate + management + variety * nrate + I(nrate^2) + #fixed effects***
-                      (1|Replicate:nrate) + (1|Replicate:nrate:management), #random effects***
+rice.lmer2.2<- lmer(yield ~ Replicate + management + variety * nrate + I(nrate^2) + 
+                      (1|Replicate:nrate) + (1|Replicate:nrate:management), 
                     data = rice)
 summary(rice.lmer2.2)
 anova(rice.lmer2.2, type = 1)
+## THINGS TO NOTE:
+##  In this example only those terms that are significant at alpha 0.05 or those that are marginal were included
+##  This expcluded all cubic and quartic terms
+##  This excluded variety by quadratic interaction
+##  This model can be used to calculate estimates for Table 8 in Piepho & Edmondson (2018)
 #
 #
 ## Calculating useful coefficients
@@ -574,7 +640,6 @@ emmeans(rice.ref2.1, ~ variety)
 #
 #
 ## Plotting results from mixed model
-##  Instead of plotting using the stat_smooth emmip from emmeans package was employed
 rice.ref2.2<- ref_grid(rice.lmer2.2, 
                        at = list(nrate = seq(0,140, by=1)))
 rice.emm2.2<- data.frame(emmeans(rice.ref2.2, ~ variety*nrate))
@@ -594,13 +659,13 @@ ggplot(rice.emm2.2, aes(y=emmean,
        y="Yield (t/ha)",
        color="Variety",
        shape="Variety",
-       title = "Example 1 - rice data")+
+       title = "Example 1 - rice data (mixed model ANCOVA)")+
   scale_color_manual(values = c("green4","red3","blue3"))+
   scale_y_continuous(limits = c(0,11),
                      breaks = c(seq(0,11, by=2)))+
   Turf_theme1(base_size = 20)
 ## THINGS TO NOTE:
-##  Compare to Figure 1 first column in Piepho & Edmondson (2018)
+##  Compare to Figure 1 in Piepho & Edmondson (2018)
 ### 
 #*#
 #*#
@@ -625,23 +690,66 @@ ggplot(rice.emm2.2, aes(y=emmean,
 summary(sorghum)
 #
 #
+## Split-plot in time
+sorghum.aov1.1<- aov(y~Replicate+variety*factweek + Error(Replicate:variety), 
+                     data = sorghum)
+summary(sorghum.aov1.1)
+## THINGS TO NOTE:
+##  Compare this to the split-split plot output
+##  Variety has fewer df than week in the error term
+#
+#
+##  Means comparisons using the split-plot in time model
+sorghum.emm1.1<- emmeans(sorghum.aov1.1, ~ factweek|variety)
+sorghum.cld1.1<- data.frame(CLD(sorghum.emm1.1, Letters = c(LETTERS)))
+## THINGS TO NOTE:
+##  Tukey contrasts for time points within variety
+#
+#
+## Plotting split-plot in time analysis
+ggplot(sorghum.cld1.1, aes(y=emmean,
+                           x=factweek,
+                           fill=variety))+
+  geom_bar(stat="identity",
+           position=position_dodge())+
+  facet_wrap(~variety)+                                #creating a panel for each variety***
+  geom_text(sorghum.cld1.1, mapping = aes(y=emmean+.5, #adding compact letter display***
+                                        x=factweek,
+                                        label=.group),
+            position = position_dodge(width = 1))+
+  labs(x="Weeks",
+       y="Leaf area index",
+       fill="Variety",
+       title = "Example 4 - sorghum data (lm - split-plot in time)")+
+  scale_y_continuous(limits = c(0,6),
+                     breaks = c(seq(0,11, by=2)))+
+  Turf_theme1(base_size = 20)
+#
+#
+## Setting up polynomials for advanced tecnique
 sorghum$rawWeeks = poly(sorghum$varweek, degree = 4, raw = TRUE)
 sorghum$polWeeks = poly(sorghum$varweek, degree = 4, raw = FALSE)
 sorghum$polBlocks = poly(sorghum$varblock, degree = 4, raw = FALSE)
 sorghum$factblock = factor(sorghum$varblock)
+## THINGS TO NOTE:
+##  Source code: https://cran.r-project.org/web/packages/agriTutorial/agriTutorial.pdf
+##  Each poly() add four columns to the data set
 #
-#
+# 
+## Setting up model output for autocorrelation testing
 AIC = NULL
 logLik = NULL
 Model = c("ID", "CS", "AR(1)", "AR(1) + nugget", "UN")
 #
 #
+## Independent uncorrelated random plots
 full_indy = gls(y ~ factweek * (Replicate + variety), sorghum)
 anova(full_indy)
 AIC = c(AIC, AIC(full_indy))
 logLik = c(logLik, logLik(full_indy))
 #
 #
+## CorCompSymm compound symmetry
 corCompSymm = gls(y ~ factweek * (Replicate + variety),
                   corr = corCompSymm(form = ~ varweek|factplot), sorghum)
 anova(corCompSymm)
@@ -650,6 +758,7 @@ logLik = c(logLik, logLik(corCompSymm))
 Variogram(corCompSymm)
 #
 #
+## CorExp without nugget
 corExp = gls(y ~ factweek * (Replicate + variety),
              corr = corExp(form = ~ varweek|factplot), sorghum)
 anova(corExp)
@@ -658,6 +767,7 @@ logLik = c(logLik, logLik(corExp))
 Variogram(corExp)
 #
 #
+## CorExp with nugget
 corExp_nugget = gls(y ~ factweek * (Replicate + variety),
                     corr = corExp(form = ~ varweek|factplot, nugget = TRUE), sorghum)
 anova(corExp_nugget)
@@ -666,6 +776,7 @@ logLik = c(logLik, logLik(corExp_nugget))
 Variogram(corExp)
 #
 #
+## CorSymm unstructured
 corSymm = gls(y ~ factweek * (Replicate + variety), corr = corSymm(form = ~ 1|factplot),
               weights = varIdent(form = ~ 1|varweek), sorghum)
 anova(corSymm)
@@ -674,105 +785,81 @@ logLik = c(logLik, logLik(corSymm))
 Variogram(corSymm)
 #
 #
+## Log likelihood and AIC statistics for different correlation structures
 dAIC = AIC - AIC[4]
 logLik = -2 * logLik
 dlogLik = logLik - logLik[4]
 AICtable = data.frame(Model, round(logLik, 2), round(dlogLik, 2), round(AIC, 2), round(dAIC, 2))
 colnames(AICtable) = c("Covar_Model", "-2logLr", "-diff2logLr", "AIC", "diffAIC")
 AICtable
+## THINGS TO NOTE:
+##  Source code: https://cran.r-project.org/web/packages/agriTutorial/agriTutorial.pdf
+##  Compare with Table 11
 #
 #
-pol_Wald =
-  gls(y ~ (factblock+variety) * (rawWeeks[,1] + rawWeeks[,2] + polWeeks[,3] + polWeeks[,4]),
-      corr = corExp(form = ~ varweek | factplot, nugget = TRUE), sorghum)
-anova(pol_Wald)
-range=coef(pol_Wald$modelStruct$corStruct,unconstrained=FALSE)[1]
-nugget=coef(pol_Wald$modelStruct$corStruct,unconstrained=FALSE)[2]
-rho=(1-nugget)*exp(-1/range)
-cat("Range =", range, "\n")
-cat("Nugget =", nugget, "\n")
-cat("Correlation =", rho, "\n")
-ACF(pol_Wald)
-plot(pol_Wald,sub.caption = NA, main = "Residuals from full polynomial weeks model")
-#
-#
-quad_Wald = gls(y ~ polBlocks + variety + rawWeeks[,1] + rawWeeks[,2] +
-                  polBlocks:(rawWeeks[,1] + rawWeeks[,2]+ polWeeks[,3] + polWeeks[,4]) +
-                  variety:(rawWeeks[,1] + rawWeeks[,2]),
-                corr = corExp(form = ~ varweek | factplot, nugget=TRUE), sorghum)
-anova(quad_Wald)
-summary(quad_Wald)$tTable
-vcov(quad_Wald)
-range=coef(quad_Wald$modelStruct$corStruct,unconstrained=FALSE)[1]
-nugget=coef(quad_Wald$modelStruct$corStruct,unconstrained=FALSE)[2]
-rho=(1-nugget)*exp(-1/range)
-cat("Range =", range, "\n")
-cat("Nugget =", nugget, "\n")
-cat("Correlation =", rho, "\n")
-plot(quad_Wald,sub.caption = NA, main = "Residuals from quadratic regression model")
-#
-#
-pol_Wald =
-  gls(y ~ (factblock+variety) * (rawWeeks[,1] + rawWeeks[,2] + polWeeks[,3] + polWeeks[,4]),
-      corr = corExp(form = ~ varweek | factplot, nugget = TRUE), sorghum)
-
-summary(sorghum)
-sorghum.gls1.1<- gls(y ~ (factblock+variety) * (varweek + I(varweek^2) + I(varweek^3) + I(varweek^4)),
-                     corr = corExp(form = ~ varweek | factplot, nugget = TRUE),
-                     data = sorghum)
-anova(sorghum.gls1.1)
-sorghum.refgrd1.1<- ref_grid(sorghum.gls1.1,at = list(varweek = seq(0,5, by=1)))
-emmip(sorghum.refgrd1.1)
-#
-#
-sorghum.lme1.1<- lme(y ~ (factblock+variety) * (varweek + I(varweek^2)), random=~1|factplot,
-                     corExp(form = ~ varweek | factplot, nugget = TRUE),
+## Fitting the model with the best autocorrelation structure
+sorghum.lme1.1<- lme(y ~ factblock + variety  + varweek + I(varweek^2) +
+                     factblock:(varweek+I(varweek^2)) +
+                     variety:(varweek+I(varweek^2)), 
+                     random=~1|factplot,
+                     corr = corExp(form = ~ varweek|factplot, nugget = TRUE),
                      data=sorghum)
 anova(sorghum.lme1.1, type = "sequential")
-sorghum.refgrd1.1<- ref_grid(sorghum.lme1.1, at = list(varweek = seq(1,5, by=1)))
-emmip(sorghum.refgrd1.1, variety ~ nrate , cov.reduce = T)
 #
 #
-summary(sorghum)
-sorghum.lme1.2<- lme(y ~ factblock + variety + (variety:varweek) + (variety:I(varweek^2)), random=~1|factplot,
-                     corr = corExp(form = ~ varweek|factplot, nugget = TRUE),
-                     data=sorghum)
-anova(sorghum.lme1.2, type = "sequential")
-sorghum.refgrd1.2<- ref_grid(sorghum.lme1.2, at = list(varweek = seq(1,5, by=1)))
-emmip(sorghum.refgrd1.2, variety ~ varweek , cov.reduce = T)
+sorghum.ref2.1<- ref_grid(sorghum.lme1.1, 
+                       at = list(varweek = seq(1,5, by=1)))
+sorghum.ref2.2<- ref_grid(sorghum.lme1.1, 
+                          at = list(varweek = seq(1,5, by=.1)))
 #
 #
-sorghum.lme1.2<- lme(y ~ factblock + variety + varweek + I(varweek^2) +
-                       polBlocks:(varweek+I(varweek^2)+I(varweek^3)+I(varweek^4)) +
-                       variety:(varweek+I(varweek^2)), random=~1|factplot,
-                     corr = corExp(form = ~ varweek|factplot, nugget = TRUE),
-                     data=sorghum)
-anova(sorghum.lme1.2, type = "sequential")
-summary(sorghum.lme1.2)$tTable
-vcov(sorghum.lme1.2)
-range=coef(sorghum.lme1.2$modelStruct$corStruct,unconstrained=FALSE)[1]
-nugget=coef(sorghum.lme1.2$modelStruct$corStruct,unconstrained=FALSE)[2]
-rho=(1-nugget)*exp(-1/range)
-cat("Range =", range, "\n")
-cat("Nugget =", nugget, "\n")
-cat("Correlation =", rho, "\n")
-plot(quad_Wald,sub.caption = NA, main = "Residuals from quadratic regression model")
-sorghum.refgrd1.4<- ref_grid(sorghum.lme1.2, at = list(varweek = seq(1,5, by=1)), nesting = NULL)
-emmip(sorghum.refgrd1.4, variety ~ varweek , cov.reduce = T)
+sorghum.emm2.1<- emmeans(sorghum.ref2.1, ~ varweek|variety)
+sorghum.emm2.2<- data.frame(emmeans(sorghum.ref2.2, ~ varweek|variety))
 #
 #
-sorghum.lme1.3<- lme(y ~ factblock + variety + (variety:varweek) + (variety:I(varweek^2)), random=~1|factplot,
-                     corr = corExp(form = ~ varweek|factplot, nugget = TRUE),
-                     data=sorghum$polBlocks)
-anova(sorghum.lme1.3, type = "sequential")
+sorghum.cld2.1<- data.frame(CLD(sorghum.emm2.1, Letters = c(LETTERS)))
 #
 #
-sorghum.aov1.1<- lm(y ~ factblock + variety + (variety:varweek) + (variety:I(varweek^2))+
-                       (factplot),
-                     data=sorghum)
-anova(sorghum.aov1.1)
-sorghum.refgrd1.3<- ref_grid(sorghum.aov1.1, at = list(varweek = seq(1,5, by=1)), nesting = NULL)
-emmip(sorghum.refgrd1.3, variety ~ varweek , cov.reduce = T)
+## Plotting for comparison with split-plot in time
+ggplot(sorghum.emm2.2, aes(y=emmean,
+                           x=varweek,
+                           color=variety))+
+  geom_line()+
+  facet_wrap(~variety)+                       
+  geom_point(sorghum.cld2.1, mapping = aes(y=emmean,
+                                            x=varweek,
+                                            color=variety),
+             shape=1)+
+  geom_text(sorghum.cld2.1, mapping = aes(y=emmean+.4,
+                                          x=varweek,
+                                          color=variety,
+                                          label=.group))+
+  labs(x="Weeks",
+       y="Leaf area index",
+       fill="Variety",
+       title = "Example 4 - sorghum data (mixed model - autocorrelation)")+
+  scale_y_continuous(limits = c(0,6),
+                     breaks = c(seq(0,11, by=2)))+
+  Turf_theme1(base_size = 20)
+#
+#
+## Recreate figure 5
+ggplot(sorghum.emm2.2, aes(y=emmean,
+                           x=varweek,
+                           color=variety))+
+  geom_line(size=.75)+
+  geom_point(sorghum.cld2.1, mapping = aes(y=emmean,
+                                           x=varweek,
+                                           color=variety),
+             shape=1,
+             size=3)+
+  labs(x="Week",
+       y="Leaf area index",
+       fill="Variety",
+       title = "Example 4 - sorghum data (Figure 5)")+
+  scale_y_continuous(limits = c(0,6),
+                     breaks = c(seq(0,11, by=2)))+
+  Turf_theme1(base_size = 20)
 ### 
 #*#
 #*#
@@ -785,6 +872,10 @@ emmip(sorghum.refgrd1.3, variety ~ varweek , cov.reduce = T)
 #*#
 #*#
 ###
+#*#
+#*#
+#*#
+##### END #####
 #*#
 #*#
 #*#
